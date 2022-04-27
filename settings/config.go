@@ -10,11 +10,13 @@ import (
 )
 
 const (
+	DefaultBasePort   = 8998
 	DefaultDbFilename = "db.sqlite3"
 	DefaultDataPath   = "data"
 )
 
 type Config struct {
+	BasePort   int
 	dataPath   string
 	dbFileName string
 }
@@ -26,6 +28,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.SetOutput(&buf)
 
 	var cfg Config
+	flags.IntVar(&cfg.BasePort, "base-port", DefaultBasePort, "Port to start HTTP")
 	flags.StringVar(&cfg.dataPath, "data-path", DefaultDataPath, "Path to persist data")
 	flags.StringVar(&cfg.dbFileName, "db", DefaultDbFilename, "Database file for persisting configuration")
 

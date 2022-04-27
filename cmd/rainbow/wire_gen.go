@@ -7,20 +7,23 @@
 package main
 
 import (
+	"github.com/ATenderholt/rainbow/internal/http"
 	"github.com/ATenderholt/rainbow/settings"
+	"github.com/google/wire"
+)
+
+import (
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Injectors from inject.go:
 
 func InjectApp(cfg *settings.Config) (App, error) {
-	app := NewApp(cfg)
+	mux := http.NewChiMux()
+	app := NewApp(cfg, mux)
 	return app, nil
 }
 
 // inject.go:
 
-func NewApp(cfg *settings.Config) App {
-	return App{
-		cfg: cfg,
-	}
-}
+var api = wire.NewSet(http.NewChiMux)

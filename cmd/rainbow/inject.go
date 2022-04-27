@@ -4,19 +4,19 @@
 package main
 
 import (
+	"github.com/ATenderholt/rainbow/internal/http"
 	"github.com/ATenderholt/rainbow/settings"
 	"github.com/google/wire"
 )
 
-func NewApp(cfg *settings.Config) App {
-	return App{
-		cfg: cfg,
-	}
-}
+var api = wire.NewSet(
+	http.NewChiMux,
+)
 
 func InjectApp(cfg *settings.Config) (App, error) {
 	wire.Build(
 		NewApp,
+		api,
 	)
 
 	return App{}, nil
