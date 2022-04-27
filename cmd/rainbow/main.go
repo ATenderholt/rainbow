@@ -12,6 +12,8 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var logger *zap.SugaredLogger

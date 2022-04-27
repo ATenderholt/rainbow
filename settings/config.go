@@ -38,7 +38,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 }
 
 func (config *Config) CreateDatabase() *sql.DB {
-	connStr := "file:" + filepath.Join(config.dataPath)
+	connStr := "file:" + filepath.Join(config.dataPath, config.dbFileName)
 	db, err := sql.Open("sqlite3", connStr)
 	if err != nil {
 		log.Panicf("unable to open database %s: %v", connStr, err)
