@@ -3,17 +3,17 @@ package http
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"net/http"
 )
 
-func handle(w http.ResponseWriter, r *http.Request) {
-	logger.Infof("Handling %s", r.URL.Path)
-}
-
-func NewChiMux() *chi.Mux {
+func NewChiMux(router *ServiceRouter) *chi.Mux {
 	mux := chi.NewMux()
 	mux.Use(middleware.Logger)
 
-	mux.Post("/*", handle)
+	mux.Head("/*", router.RouteByAuthorization)
+	mux.Get("/*", router.RouteByAuthorization)
+	mux.Post("/*", router.RouteByAuthorization)
+	mux.Put("/*", router.RouteByAuthorization)
+	mux.Delete("/*", router.RouteByAuthorization)
+
 	return mux
 }

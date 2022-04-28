@@ -19,11 +19,12 @@ import (
 // Injectors from inject.go:
 
 func InjectApp(cfg *settings.Config) (App, error) {
-	mux := http.NewChiMux()
+	serviceRouter := http.NewServiceRouter()
+	mux := http.NewChiMux(serviceRouter)
 	app := NewApp(cfg, mux)
 	return app, nil
 }
 
 // inject.go:
 
-var api = wire.NewSet(http.NewChiMux)
+var api = wire.NewSet(http.NewChiMux, http.NewServiceRouter)
