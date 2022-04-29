@@ -11,7 +11,6 @@ import (
 
 var api = wire.NewSet(
 	http.NewChiMux,
-	http.NewServiceRouter,
 )
 
 func InjectApp(cfg *settings.Config) (App, error) {
