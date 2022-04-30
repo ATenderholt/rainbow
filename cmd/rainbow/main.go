@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"flag"
 	"fmt"
@@ -64,9 +65,15 @@ func start(ctx context.Context, config *settings.Config) error {
 		return err
 	}
 
-	initializeDb(config)
+	db, err := config.CreateDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
-	app, err := InjectApp(config)
+	initializeDb(db)
+
+	app, err := InjectApp(config, db)
 	if err != nil {
 		logger.Errorf("Unable to initialize application: %v", err)
 		return err
@@ -89,10 +96,7 @@ func start(ctx context.Context, config *settings.Config) error {
 	return nil
 }
 
-func initializeDb(config *settings.Config) {
-	db := config.CreateDatabase()
-	defer db.Close()
-
+func initializeDb(db *sql.DB) {
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(logging.GooseLogger{logger})
 

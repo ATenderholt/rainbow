@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"flag"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -40,19 +40,25 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	return &cfg, buf.String(), err
 }
 
-func (config *Config) CreateDatabase() *sql.DB {
+func (config Config) DatabaseConnection() string {
+	return filepath.Join(config.dataPath, config.dbFileName)
+}
+
+func (config *Config) CreateDatabase() (*sql.DB, error) {
 	connStr := "file:" + filepath.Join(config.dataPath, config.dbFileName)
 	db, err := sql.Open("sqlite3", connStr)
 	if err != nil {
-		log.Panicf("unable to open database %s: %v", connStr, err)
+		e := fmt.Errorf("unable to open database %s: %v", connStr, err)
+		return nil, e
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Panicf("unable to ping database %s: %v", connStr, err)
+		e := fmt.Errorf("unable to ping database %s: %v", connStr, err)
+		return nil, e
 	}
 
-	return db
+	return db, nil
 }
 
 func (config *Config) DataPath() string {

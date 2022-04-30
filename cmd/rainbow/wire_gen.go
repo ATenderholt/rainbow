@@ -7,9 +7,12 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/ATenderholt/rainbow/internal/http"
+	"github.com/ATenderholt/rainbow/internal/service"
 	"github.com/ATenderholt/rainbow/settings"
-	"github.com/google/wire"
+	"github.com/go-rel/rel"
+	"github.com/go-rel/sqlite3"
 )
 
 import (
@@ -18,12 +21,17 @@ import (
 
 // Injectors from inject.go:
 
-func InjectApp(cfg *settings.Config) (App, error) {
-	mux := http.NewChiMux()
+func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
+	repository := InjectDb(db)
+	motoService := service.NewMotoService(repository)
+	mux := http.NewChiMux(motoService)
 	app := NewApp(cfg, mux)
 	return app, nil
 }
 
 // inject.go:
 
-var api = wire.NewSet(http.NewChiMux)
+func InjectDb(db *sql.DB) rel.Repository {
+	adapter := sqlite3.New(db)
+	return rel.New(adapter)
+}

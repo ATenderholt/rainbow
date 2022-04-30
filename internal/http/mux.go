@@ -1,13 +1,17 @@
 package http
 
 import (
+	"context"
+	"github.com/ATenderholt/rainbow/internal/domain"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"io/ioutil"
 	"net/http"
 )
 
-type MotoService interface{}
+type MotoService interface {
+	SaveRequest(ctx context.Context, request domain.MotoRequest) error
+}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	logger.Infof("Handling %s for service %s", r.URL.Path, ServiceFromRequest(r))
@@ -17,11 +21,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	logger.Infof("Got payload: %s", string(payload))
 }
 
-func NewChiMux() *chi.Mux {
+func NewChiMux(service MotoService) *chi.Mux {
 	mux := chi.NewMux()
 	mux.Use(middleware.Logger)
 	mux.Use(extractService)
-	mux.Use(motoMiddleware())
+	mux.Use(motoMiddleware(service))
 
 	mux.Head("/*", handler)
 	mux.Get("/*", handler)

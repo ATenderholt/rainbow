@@ -2,6 +2,8 @@ package http
 
 import (
 	"context"
+	"github.com/ATenderholt/rainbow/internal/domain"
+	"github.com/go-chi/chi/v5/middleware"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -47,7 +49,7 @@ func extractService(next http.Handler) http.Handler {
 	return http.HandlerFunc(f)
 }
 
-func motoMiddleware() func(http.Handler) http.Handler {
+func motoMiddleware(motoService MotoService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		f := func(w http.ResponseWriter, r *http.Request) {
 			service := ServiceFromRequest(r)
@@ -59,15 +61,30 @@ func motoMiddleware() func(http.Handler) http.Handler {
 
 			var payload strings.Builder
 			body := io.TeeReader(r.Body, &payload)
-			//authorization := r.Header.Get(Authorization)
-			//contentType := r.Header.Get(ContentType)
-			//target := r.Header.Get(AmzTarget)
-
 			r.Body = ioutil.NopCloser(body)
 
-			next.ServeHTTP(w, r)
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
-			logger.Infof("Back from %s after sending %s", r.RequestURI, payload.String())
+			next.ServeHTTP(ww, r)
+
+			authorization := r.Header.Get(Authorization)
+			contentType := r.Header.Get(ContentType)
+			target := r.Header.Get(AmzTarget)
+
+			request := domain.MotoRequest{
+				Service:       service,
+				Method:        r.Method,
+				Path:          r.URL.Path,
+				Authorization: authorization,
+				ContentType:   contentType,
+				Target:        target,
+				Payload:       payload.String(),
+			}
+
+			err := motoService.SaveRequest(context.Background(), request)
+			if err != nil {
+				logger.Errorf("Unable to persist Moto request: %v", err)
+			}
 		}
 
 		return http.HandlerFunc(f)

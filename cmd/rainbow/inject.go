@@ -4,19 +4,27 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/ATenderholt/rainbow/internal/http"
+	"github.com/ATenderholt/rainbow/internal/service"
 	"github.com/ATenderholt/rainbow/settings"
+	"github.com/go-rel/rel"
+	"github.com/go-rel/sqlite3"
 	"github.com/google/wire"
 )
 
-var api = wire.NewSet(
-	http.NewChiMux,
-)
+func InjectDb(db *sql.DB) rel.Repository {
+	adapter := sqlite3.New(db)
+	return rel.New(adapter)
+}
 
-func InjectApp(cfg *settings.Config) (App, error) {
+func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 	wire.Build(
 		NewApp,
-		api,
+		InjectDb,
+		http.NewChiMux,
+		service.NewMotoService,
+		wire.Bind(new(http.MotoService), new(service.MotoService)),
 	)
 
 	return App{}, nil
