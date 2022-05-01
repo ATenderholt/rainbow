@@ -23,6 +23,7 @@ func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 		NewApp,
 		InjectDb,
 		http.NewChiMux,
+		http.NewProxy,
 		service.NewMotoService,
 		wire.Bind(new(http.MotoService), new(service.MotoService)),
 	)

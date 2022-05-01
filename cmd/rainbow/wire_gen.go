@@ -24,7 +24,8 @@ import (
 func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 	repository := InjectDb(db)
 	motoService := service.NewMotoService(repository)
-	mux := http.NewChiMux(motoService)
+	proxy := http.NewProxy(cfg)
+	mux := http.NewChiMux(motoService, proxy)
 	app := NewApp(cfg, mux)
 	return app, nil
 }
