@@ -56,6 +56,12 @@ func (p Proxy) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for key, value := range proxyRes.Header {
+		for _, v := range value {
+			w.Header().Add(key, v)
+		}
+	}
+
 	w.WriteHeader(proxyRes.StatusCode)
 	_, err = io.Copy(w, proxyRes.Body)
 	if err != nil {
