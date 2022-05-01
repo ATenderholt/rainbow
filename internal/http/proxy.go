@@ -18,11 +18,19 @@ func NewProxy(cfg *settings.Config) Proxy {
 
 func (p Proxy) handle(w http.ResponseWriter, r *http.Request) {
 	service := ServiceFromRequest(r)
-	logger.Infof("Handling %s for service %s", r.URL.Path, service)
 
 	url := r.URL
-	url.Host = "localhost:5001"
 	url.Scheme = "http"
+	switch service {
+	case "lambda":
+		url.Host = p.cfg.FunctionsHost()
+	case "s3":
+		url.Host = p.cfg.StorageHost()
+	default:
+		url.Host = p.cfg.MotoHost()
+	}
+
+	logger.Infof("Proxying request for service %s to %s", service, url.String())
 
 	proxyReq, err := http.NewRequest(r.Method, url.String(), r.Body)
 	if err != nil {
@@ -39,8 +47,6 @@ func (p Proxy) handle(w http.ResponseWriter, r *http.Request) {
 			proxyReq.Header.Add(header, value)
 		}
 	}
-
-	logger.Infof("Proxying request for service %s to %s", service, url.String())
 
 	client := &http.Client{}
 	proxyRes, err := client.Do(proxyReq)
