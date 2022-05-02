@@ -26,6 +26,10 @@ const (
 	DefaultStorageImage = "atenderholt/rainbow-storage:latest"
 	DefaultStorageName  = "rainbow-storage"
 	DefaultStoragePort  = 9000
+
+	DefaultSqsImage = "softwaremill/elasticmq:1.3.4"
+	DefaultSqsName  = "sqs"
+	DefaultSqsPort  = 9324
 )
 
 type Container struct {
@@ -43,6 +47,7 @@ type Config struct {
 	Functions Container
 	Moto      Container
 	Storage   Container
+	Sqs       Container
 }
 
 func FromFlags(name string, args []string) (*Config, string, error) {
@@ -68,6 +73,10 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.StringVar(&cfg.Storage.Image, "storage-image", DefaultStorageImage, "Docker image for storage")
 	flags.StringVar(&cfg.Storage.Name, "storage-name", DefaultStorageName, "Docker container name for storage")
 	flags.IntVar(&cfg.Storage.Port, "storage-port", DefaultStoragePort, "Port for storage running on localhost")
+
+	flags.StringVar(&cfg.Sqs.Image, "sqs-image", DefaultSqsImage, "Docker image for sqs")
+	flags.StringVar(&cfg.Sqs.Name, "sqs-name", DefaultSqsName, "Docker container name for sqs")
+	flags.IntVar(&cfg.Sqs.Port, "sqs-port", DefaultSqsPort, "Port for sqs running on localhost")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -133,4 +142,12 @@ func (config Config) StorageHost() string {
 	}
 
 	return config.Storage.Name + ":" + strconv.Itoa(9000)
+}
+
+func (config Config) SqsHost() string {
+	if config.IsLocal {
+		return "localhost:" + strconv.Itoa(config.Sqs.Port)
+	}
+
+	return config.Sqs.Name + ":" + strconv.Itoa(9324)
 }

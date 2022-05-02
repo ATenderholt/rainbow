@@ -26,6 +26,8 @@ func (p Proxy) handle(w http.ResponseWriter, r *http.Request) {
 		url.Host = p.cfg.FunctionsHost()
 	case "s3":
 		url.Host = p.cfg.StorageHost()
+	case "sqs":
+		url.Host = p.cfg.SqsHost()
 	default:
 		url.Host = p.cfg.MotoHost()
 	}

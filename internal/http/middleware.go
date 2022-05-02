@@ -54,7 +54,7 @@ func motoMiddleware(motoService MotoService) func(http.Handler) http.Handler {
 		f := func(w http.ResponseWriter, r *http.Request) {
 			service := ServiceFromRequest(r)
 			switch service {
-			case "lambda", "s3":
+			case "lambda", "s3", "sqs":
 				next.ServeHTTP(w, r)
 				return
 			}
