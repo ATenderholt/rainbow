@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"github.com/ATenderholt/rainbow/internal/domain"
 	"github.com/go-chi/chi/v5/middleware"
@@ -85,6 +86,89 @@ func motoMiddleware(motoService MotoService) func(http.Handler) http.Handler {
 			if err != nil {
 				logger.Errorf("Unable to persist Moto request: %v", err)
 			}
+		}
+
+		return http.HandlerFunc(f)
+	}
+}
+
+type SqsResponse struct {
+	service    ElasticService
+	wrapped    http.ResponseWriter
+	payload    string
+	statusCode int
+}
+
+func NewSqsResponse(service ElasticService, w http.ResponseWriter, payload string) SqsResponse {
+	return SqsResponse{
+		service: service,
+		wrapped: w,
+		payload: payload,
+	}
+}
+
+func (s SqsResponse) Header() http.Header {
+	return s.wrapped.Header()
+}
+
+func (s SqsResponse) Write(bytes []byte) (int, error) {
+	logger.Infof("Handling Elastic response, status code: %d", s.statusCode)
+	// if error, just forward response
+	if s.statusCode != 200 {
+		return s.wrapped.Write(bytes)
+	}
+
+	action := s.service.ParseAction(s.payload)
+	switch action {
+	case "CreateQueue":
+		err := s.service.SaveAttributes(s.payload)
+		if err != nil {
+			logger.Errorf("unable to save queue attributes: %v", err)
+			s.WriteHeader(http.StatusInternalServerError)
+			return s.wrapped.Write([]byte("unable to save queue attributes"))
+		}
+		return s.wrapped.Write(bytes)
+	case "GetQueueAttributes":
+		b, err := s.service.DecorateAttributes(s.payload, bytes)
+		if err != nil {
+			logger.Errorf("unable to decorate queue attributes: %v", err)
+			s.WriteHeader(http.StatusInternalServerError)
+			return s.wrapped.Write([]byte("unable to decorate queue attributes"))
+		}
+		return s.wrapped.Write(b)
+	default:
+		return s.wrapped.Write(bytes)
+	}
+}
+
+func (s *SqsResponse) WriteHeader(statusCode int) {
+	s.statusCode = statusCode
+	s.wrapped.WriteHeader(statusCode)
+}
+
+func elasticMiddleware(elasticService ElasticService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		f := func(w http.ResponseWriter, r *http.Request) {
+			service := ServiceFromRequest(r)
+			if service != "sqs" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			payload, err := ioutil.ReadAll(r.Body)
+			defer r.Body.Close()
+
+			if err != nil {
+				logger.Errorf("unable to read body for sqs request: %v", err)
+				http.Error(w, "unable to read body for sqs request", http.StatusBadRequest)
+				return
+			}
+
+			r.Body = ioutil.NopCloser(bytes.NewReader(payload))
+
+			ww := NewSqsResponse(elasticService, w, string(payload))
+
+			next.ServeHTTP(&ww, r)
 		}
 
 		return http.HandlerFunc(f)

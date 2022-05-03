@@ -25,7 +25,9 @@ func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 		http.NewChiMux,
 		http.NewProxy,
 		service.NewMotoService,
+		service.NewElasticService,
 		wire.Bind(new(http.MotoService), new(service.MotoService)),
+		wire.Bind(new(http.ElasticService), new(service.ElasticService)),
 	)
 
 	return App{}, nil

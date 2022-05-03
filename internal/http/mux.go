@@ -11,11 +11,18 @@ type MotoService interface {
 	SaveRequest(ctx context.Context, request domain.MotoRequest) error
 }
 
-func NewChiMux(service MotoService, proxy Proxy) *chi.Mux {
+type ElasticService interface {
+	ParseAction(string) string
+	SaveAttributes(string) error
+	DecorateAttributes(string, []byte) ([]byte, error)
+}
+
+func NewChiMux(moto MotoService, elastic ElasticService, proxy Proxy) *chi.Mux {
 	mux := chi.NewMux()
 	mux.Use(middleware.Logger)
 	mux.Use(extractService)
-	mux.Use(motoMiddleware(service))
+	mux.Use(motoMiddleware(moto))
+	mux.Use(elasticMiddleware(elastic))
 
 	mux.Head("/*", proxy.handle)
 	mux.Get("/*", proxy.handle)
