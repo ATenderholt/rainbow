@@ -1,8 +1,12 @@
 package service
 
 import (
+	"context"
+	"fmt"
+	"github.com/ATenderholt/rainbow/internal/domain"
 	"github.com/go-rel/rel"
 	"regexp"
+	"time"
 )
 
 var actionRegex *regexp.Regexp
@@ -58,6 +62,45 @@ func (s SqsService) ParseAction(payload string) string {
 }
 
 func (s SqsService) SaveAttributes(payload string) error {
+	logger.Infof("Saving attributes for payload: %s", payload)
+
+	name := queueNameRegex.FindStringSubmatch(payload)
+	if name == nil {
+		err := fmt.Errorf("unable to find queue name in %s", payload)
+		logger.Error(err)
+		return err
+	}
+
+	attributes := createQueueAttributeRegex.FindAllStringSubmatch(payload, -1)
+	if attributes == nil {
+		logger.Warnf("unable to find attributes in %s", payload)
+	}
+
+	tags := createQueueTagRegex.FindAllStringSubmatch(payload, -1)
+	if tags == nil {
+		logger.Warnf("unable to find tags in %s", payload)
+	}
+
+	queue := domain.NewSqsQueue(name[1])
+	for _, groups := range attributes {
+		queue.AddAttribute(groups[1], groups[2])
+	}
+	for _, groups := range tags {
+		queue.AddTag(groups[1], groups[2])
+	}
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	err := s.repo.Insert(ctx, &queue)
+
+	if err != nil {
+		e := fmt.Errorf("error inserting attributes/tags for queue %s: %v", name, err)
+		logger.Error(e)
+		return e
+	}
+
 	return nil
 }
 

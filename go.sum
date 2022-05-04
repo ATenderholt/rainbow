@@ -395,6 +395,8 @@ github.com/go-rel/rel v0.33.0/go.mod h1:x8s+3nWG8wMi7ZD0QyhUk6kEQkt34qV/ZVdkftem
 github.com/go-rel/rel v0.34.0 h1:dynBkxkVOHxFMHtu3p8vdvAMjjCm+Yi2J0tJsjeoVjQ=
 github.com/go-rel/rel v0.34.0/go.mod h1:YDHtnJhlaiSjANLGiZXvI57jg1amfpJSJlOimq6WJTE=
 github.com/go-rel/reltest v0.7.1-0.20220312094335-ff56a837dea0/go.mod h1:UND4kTUh3KpSGah0d71AuaOAaIcWKnFOelrtgDIQB/k=
+github.com/go-rel/reltest v0.9.0 h1:OTBY2dD/hNXaH5r1XXIHRdni6QGCmFaQm1pFAFkg1ok=
+github.com/go-rel/reltest v0.9.0/go.mod h1:Eu1JNASF6TfiktPlmvWEYHp+UejmGl9MmKRWieHxkXo=
 github.com/go-rel/sql v0.8.1-0.20220312080648-77281ca6c0f2/go.mod h1:u7tYWeR7tpifhb6zQ42l07MsZusrhF64q3v+yUDhBb8=
 github.com/go-rel/sql v0.8.1-0.20220312090959-765b2c0aa060/go.mod h1:u7tYWeR7tpifhb6zQ42l07MsZusrhF64q3v+yUDhBb8=
 github.com/go-rel/sql v0.9.0 h1:wTQRABIbANo22ZsYQEieoOSC5nX/oCOSkKgzemx6MwU=

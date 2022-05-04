@@ -19,6 +19,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.7 // indirect
 	github.com/go-rel/rel v0.34.0 // indirect
+	github.com/go-rel/reltest v0.9.0 // indirect
 	github.com/go-rel/sql v0.9.0 // indirect
 	github.com/go-rel/sqlite3 v0.6.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
