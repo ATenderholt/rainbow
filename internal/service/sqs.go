@@ -41,26 +41,26 @@ func init() {
 	}
 }
 
-type ElasticService struct {
+type SqsService struct {
 	repo rel.Repository
 }
 
-func NewElasticService(repo rel.Repository) ElasticService {
-	return ElasticService{
+func NewSqsService(repo rel.Repository) SqsService {
+	return SqsService{
 		repo: repo,
 	}
 }
 
-func (s ElasticService) ParseAction(payload string) string {
+func (s SqsService) ParseAction(payload string) string {
 	logger.Infof("payload: %s", payload)
 	action := actionRegex.FindStringSubmatch(payload)
 	return action[1]
 }
 
-func (s ElasticService) SaveAttributes(payload string) error {
+func (s SqsService) SaveAttributes(payload string) error {
 	return nil
 }
 
-func (s ElasticService) DecorateAttributes(payload string, response []byte) ([]byte, error) {
+func (s SqsService) DecorateAttributes(payload string, response []byte) ([]byte, error) {
 	return []byte(""), nil
 }

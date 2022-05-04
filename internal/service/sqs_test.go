@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestElasticParseAction(t *testing.T) {
-	s := service.NewElasticService(nil)
+func TestSqsParseAction(t *testing.T) {
+	s := service.NewSqsService(nil)
 	action := s.ParseAction("Action=CreateQueue&Version=2012-11-05&QueueName=test5")
 
 	assert.Equal(t, "CreateQueue", action)

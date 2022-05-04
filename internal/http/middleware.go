@@ -93,13 +93,13 @@ func motoMiddleware(motoService MotoService) func(http.Handler) http.Handler {
 }
 
 type SqsResponse struct {
-	service    ElasticService
+	service    SqsService
 	wrapped    http.ResponseWriter
 	payload    string
 	statusCode int
 }
 
-func NewSqsResponse(service ElasticService, w http.ResponseWriter, payload string) SqsResponse {
+func NewSqsResponse(service SqsService, w http.ResponseWriter, payload string) SqsResponse {
 	return SqsResponse{
 		service: service,
 		wrapped: w,
@@ -146,7 +146,7 @@ func (s *SqsResponse) WriteHeader(statusCode int) {
 	s.wrapped.WriteHeader(statusCode)
 }
 
-func elasticMiddleware(elasticService ElasticService) func(http.Handler) http.Handler {
+func sqsMiddleware(sqsService SqsService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		f := func(w http.ResponseWriter, r *http.Request) {
 			service := ServiceFromRequest(r)
@@ -166,7 +166,7 @@ func elasticMiddleware(elasticService ElasticService) func(http.Handler) http.Ha
 
 			r.Body = ioutil.NopCloser(bytes.NewReader(payload))
 
-			ww := NewSqsResponse(elasticService, w, string(payload))
+			ww := NewSqsResponse(sqsService, w, string(payload))
 
 			next.ServeHTTP(&ww, r)
 		}
