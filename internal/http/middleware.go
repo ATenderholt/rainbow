@@ -111,6 +111,18 @@ func (s SqsResponse) Header() http.Header {
 	return s.wrapped.Header()
 }
 
+// ReadFrom is necessary because response is being decorated; otherwise io.Copy
+// will throw a short read error
+func (s SqsResponse) ReadFrom(r io.Reader) (int64, error) {
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return int64(len(b)), err
+	}
+
+	n, err := s.Write(b)
+	return int64(n), err
+}
+
 func (s SqsResponse) Write(bytes []byte) (int, error) {
 	logger.Infof("Handling Elastic response, status code: %d", s.statusCode)
 	// if error, just forward response

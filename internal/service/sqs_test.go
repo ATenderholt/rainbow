@@ -122,3 +122,8 @@ func TestSqsSave(t *testing.T) {
 
 	repo.AssertExpectations(t)
 }
+
+func TestDecorateNotFound(t *testing.T) {
+	t.Fatalf("Not implemented")
+	//response := " <GetQueueAttributesResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><GetQueueAttributesResult></GetQueueAttributesResult><ResponseMetadata><RequestId>00000000-0000-0000-0000-000000000000</RequestId></ResponseMetadata></GetQueueAttributesResponse>"
+}

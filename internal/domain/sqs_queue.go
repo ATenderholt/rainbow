@@ -34,15 +34,40 @@ func (queue *SqsQueue) AddTag(name string, value string) {
 }
 
 type SqsQueueAttribute struct {
-	ID      int
-	QueueId int
+	ID      int `xml:"-"`
+	QueueId int `xml:"-"`
 	Name    string
 	Value   string
 }
 
 type SqsQueueTag struct {
-	ID      int
-	QueueId int
+	ID      int `xml:"-"`
+	QueueId int `xml:"-"`
 	Name    string
 	Value   string
+}
+
+type GetQueueAttributesResult struct {
+	Attribute []SqsQueueAttribute
+}
+
+type ResponseMetadata struct {
+	RequestId string
+}
+
+type GetQueueAttributesResponse struct {
+	GetQueueAttributesResult GetQueueAttributesResult
+	ResponseMetadata         ResponseMetadata
+}
+
+func (obj *GetQueueAttributesResponse) AddAttributeIfNotExists(key, value string) {
+	for _, attribute := range obj.GetQueueAttributesResult.Attribute {
+		if attribute.Name == key {
+			return
+		}
+	}
+
+	obj.GetQueueAttributesResult.Attribute = append(obj.GetQueueAttributesResult.Attribute,
+		SqsQueueAttribute{Name: key, Value: value},
+	)
 }

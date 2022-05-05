@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"github.com/ATenderholt/rainbow/internal/domain"
 	"github.com/go-rel/rel"
+	"github.com/go-rel/rel/where"
 	"regexp"
 	"time"
 )
@@ -105,5 +107,50 @@ func (s SqsService) SaveAttributes(payload string) error {
 }
 
 func (s SqsService) DecorateAttributes(payload string, response []byte) ([]byte, error) {
-	return []byte(""), nil
+	logger.Infof("Decorating attributes for payload: %s", payload)
+	logger.Infof("Current response: %s", string(response))
+
+	name := queueUrlRegex.FindStringSubmatch(payload)
+	if name == nil {
+		err := fmt.Errorf("unable to find queue name in %s", payload)
+		logger.Error(err)
+		return response, err
+	}
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var queue domain.SqsQueue
+	err := s.repo.Find(ctx, &queue, where.Eq("name", name[1]))
+	switch {
+	case err == rel.NotFoundError{}:
+		logger.Warnf("unable to find queue named %s", name[1])
+		return response, nil
+	case err != nil:
+		e := fmt.Errorf("unable to find queue named %s: %v", name[1], err)
+		logger.Error(e)
+		return response, e
+	}
+
+	var output domain.GetQueueAttributesResponse
+	err = xml.Unmarshal(response, &output)
+	if err != nil {
+		e := fmt.Errorf("unable to unmarshal %s: %v", string(response), err)
+		logger.Error(e)
+		return response, e
+	}
+
+	for _, attr := range queue.Attributes {
+		output.AddAttributeIfNotExists(attr.Name, attr.Value)
+	}
+
+	bytes, err := xml.Marshal(output)
+	if err != nil {
+		e := fmt.Errorf("unable to marshal %+v: %v", output, err)
+		logger.Error(e)
+		return response, e
+	}
+
+	return bytes, nil
 }
