@@ -6,18 +6,16 @@ CREATE TABLE IF NOT EXISTS sqs_queues (
 
 CREATE TABLE IF NOT EXISTS sqs_queue_attributes (
     id		    integer primary key autoincrement,
-    queue_id    integer
-    name        text not null,
-    key		    text not null,
+    queue_id    integer,
+    name	    text not null,
     value       text,
     foreign key (queue_id) references sqs_queues(id)
 );
 
 CREATE TABLE IF NOT EXISTS sqs_queue_tags (
     id          integer primary key autoincrement,
-    queue_id    integer
+    queue_id    integer,
     name        text not null,
-    key         text not null,
     value       text,
     foreign key (queue_id) references sqs_queues(id)
 );
