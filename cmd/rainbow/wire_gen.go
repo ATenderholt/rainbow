@@ -23,11 +23,11 @@ import (
 
 func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 	repository := InjectDb(db)
-	motoService := service.NewMotoService(repository)
-	elasticService := service.NewSqsService(repository)
+	motoService := service.NewMotoService(cfg, repository)
+	sqsService := service.NewSqsService(repository)
 	proxy := http.NewProxy(cfg)
-	mux := http.NewChiMux(motoService, elasticService, proxy)
-	app := NewApp(cfg, mux)
+	mux := http.NewChiMux(motoService, sqsService, proxy)
+	app := NewApp(cfg, mux, motoService)
 	return app, nil
 }
 

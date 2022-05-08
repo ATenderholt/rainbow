@@ -1,32 +1,40 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/ATenderholt/rainbow/settings"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-type App struct {
-	cfg *settings.Config
-	srv *http.Server
+type MotoService interface {
+	ReplayAllRequests(ctx context.Context) error
 }
 
-func NewApp(cfg *settings.Config, mux *chi.Mux) App {
+type App struct {
+	cfg  *settings.Config
+	srv  *http.Server
+	moto MotoService
+}
+
+func NewApp(cfg *settings.Config, mux *chi.Mux, moto MotoService) App {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
 	}
 
 	return App{
-		cfg: cfg,
-		srv: srv,
+		cfg:  cfg,
+		srv:  srv,
+		moto: moto,
 	}
 }
 
 func (app App) Start() error {
 	errors := make(chan error, 5)
 	go app.StartHttp(errors)
+	go app.StartMoto(errors)
 
 	return nil
 }
@@ -37,6 +45,13 @@ func (app App) StartHttp(errors chan error) {
 
 	if err != nil && err != http.ErrServerClosed {
 		logger.Errorf("Problem starting HTTP server: %v", err)
+		errors <- err
+	}
+}
+
+func (app App) StartMoto(errors chan error) {
+	err := app.moto.ReplayAllRequests(context.Background())
+	if err != nil {
 		errors <- err
 	}
 }
