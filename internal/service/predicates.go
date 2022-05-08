@@ -24,6 +24,20 @@ func persistIamRequest(request domain.MotoRequest) bool {
 	return true
 }
 
+func persistStsRequest(request domain.MotoRequest) bool {
+	excludes := []string{
+		"GetCallerIdentity",
+	}
+
+	for _, exclude := range excludes {
+		if strings.Contains(request.Payload, exclude) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func persistSsmRequest(request domain.MotoRequest) bool {
 	excludes := []string{
 		"AmazonSSM.GetParameter",

@@ -20,6 +20,7 @@ type MotoService struct {
 func NewMotoService(cfg *settings.Config, repo rel.Repository) MotoService {
 	predicates := make(map[string]persistPredicate)
 	predicates["iam"] = persistIamRequest
+	predicates["sts"] = persistStsRequest
 	predicates["ssm"] = persistSsmRequest
 
 	return MotoService{
