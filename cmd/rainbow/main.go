@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"embed"
 	"flag"
 	"fmt"
-	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/rainbow/logging"
 	"github.com/ATenderholt/rainbow/settings"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 	"os"
-	"os/signal"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var logger *zap.SugaredLogger
@@ -37,63 +33,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	mainCtx := context.Background()
-
-	dockerlib.SetLogger(logging.NewLogger().Desugar().Named("dockerlib"))
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	ctx, cancel := context.WithCancel(mainCtx)
-	go func() {
-		s := <-c
-		logger.Infof("Received signal %v", s)
-		cancel()
-	}()
-
-	if err := start(ctx, cfg); err != nil {
-		logger.Errorf("Failed to start: %v", err)
-	}
-}
-
-func start(ctx context.Context, config *settings.Config) error {
 	logger.Info("Starting up ...")
 
-	err := os.MkdirAll(config.DataPath(), 0755)
+	err = os.MkdirAll(cfg.DataPath(), 0755)
 	if err != nil {
-		logger.Errorf("Unable to make data directory: %v", err)
-		return err
+		logger.Fatalf("Unable to make data directory: %v", err)
 	}
 
-	db, err := config.CreateDatabase()
+	db, err := cfg.CreateDatabase()
 	if err != nil {
-		return err
+		logger.Fatalf("Unable to create database: %v", err)
 	}
 	defer db.Close()
 
 	initializeDb(db)
 
-	app, err := InjectApp(config, db)
+	app, err := InjectApp(cfg, db)
 	if err != nil {
-		logger.Errorf("Unable to initialize application: %v", err)
-		return err
+		logger.Fatalf("Unable to initialize application: %v", err)
 	}
 
 	err = app.Start()
 	if err != nil {
-		logger.Errorf("Unable to start application: %v", err)
-		return err
+		logger.Errorf("App failed to start: %v", err)
+		app.Shutdown()
 	}
-
-	<-ctx.Done()
-
-	logger.Info("Shutting down ...")
-	err = app.Shutdown()
-	if err != nil {
-		logger.Error("Error when shutting down app")
-	}
-
-	return nil
 }
 
 func initializeDb(db *sql.DB) {
