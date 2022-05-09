@@ -15,24 +15,27 @@ import (
 
 type MotoService interface {
 	ReplayAllRequests(ctx context.Context) error
+	Start(ctx context.Context) error
 }
 
 type App struct {
-	cfg  *settings.Config
-	srv  *http.Server
-	moto MotoService
+	cfg    *settings.Config
+	docker *dockerlib.DockerController
+	srv    *http.Server
+	moto   MotoService
 }
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, moto MotoService) App {
+func NewApp(cfg *settings.Config, docker *dockerlib.DockerController, mux *chi.Mux, moto MotoService) App {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
 	}
 
 	return App{
-		cfg:  cfg,
-		srv:  srv,
-		moto: moto,
+		cfg:    cfg,
+		docker: docker,
+		srv:    srv,
+		moto:   moto,
 	}
 }
 
@@ -72,9 +75,17 @@ func (app App) StartHttp() error {
 }
 
 func (app App) StartMoto() error {
-	err := app.moto.ReplayAllRequests(context.Background())
+	ctx := context.Background()
+
+	err := app.moto.Start(ctx)
 	if err != nil {
-		logger.Errorf("Unable to replay Moto requests: %v", err)
+		logger.Errorf("unable to start moto: %v", err)
+		return err
+	}
+
+	err = app.moto.ReplayAllRequests(ctx)
+	if err != nil {
+		logger.Errorf("unable to replay Moto requests: %v", err)
 		return err
 	}
 
@@ -86,12 +97,18 @@ func (app App) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	err := app.srv.Shutdown(ctx)
+	err := app.docker.ShutdownAll(ctx)
+	if err != nil {
+		logger.Errorf("unable to shutdown all docker containers: %v", err)
+	}
+
+	err = app.srv.Shutdown(ctx)
 	if err != nil {
 		e := fmt.Errorf("error during shutdown: %v", err)
 		logger.Error(e)
 		return e
 	}
 
+	logger.Infof("Shutdown complete")
 	return nil
 }

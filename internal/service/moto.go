@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/rainbow/internal/domain"
 	"github.com/ATenderholt/rainbow/settings"
 	"github.com/go-rel/rel"
@@ -13,11 +14,12 @@ import (
 
 type MotoService struct {
 	cfg        *settings.Config
+	docker     *dockerlib.DockerController
 	repo       rel.Repository
 	predicates map[string]persistPredicate
 }
 
-func NewMotoService(cfg *settings.Config, repo rel.Repository) MotoService {
+func NewMotoService(cfg *settings.Config, docker *dockerlib.DockerController, repo rel.Repository) MotoService {
 	predicates := make(map[string]persistPredicate)
 	predicates["iam"] = persistIamRequest
 	predicates["sts"] = persistStsRequest
@@ -25,9 +27,43 @@ func NewMotoService(cfg *settings.Config, repo rel.Repository) MotoService {
 
 	return MotoService{
 		cfg:        cfg,
+		docker:     docker,
 		repo:       repo,
 		predicates: predicates,
 	}
+}
+
+func (moto MotoService) Start(ctx context.Context) error {
+	image := moto.cfg.Moto.Image
+
+	err := moto.docker.EnsureImage(ctx, image)
+	if err != nil {
+		e := fmt.Errorf("unable to ensure image for moto: %v", err)
+		logger.Error(e)
+		return e
+	}
+
+	container := dockerlib.Container{
+		Name:    "moto",
+		Image:   image,
+		Network: []string{moto.cfg.Network},
+		Ports: map[int]int{
+			5000: moto.cfg.Moto.Port,
+		},
+	}
+
+	ready, err := moto.docker.Start(ctx, &container, "Running on http")
+	if err != nil {
+		e := fmt.Errorf("unable to start moto container: %v", err)
+		logger.Error(e)
+		return e
+	}
+
+	<-ready
+
+	logger.Info("Moto is ready")
+
+	return nil
 }
 
 func (moto MotoService) shouldPersist(request domain.MotoRequest) bool {

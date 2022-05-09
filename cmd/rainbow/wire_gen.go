@@ -8,6 +8,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/rainbow/internal/http"
 	"github.com/ATenderholt/rainbow/internal/service"
 	"github.com/ATenderholt/rainbow/settings"
@@ -22,12 +23,16 @@ import (
 // Injectors from inject.go:
 
 func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
+	dockerController, err := dockerlib.NewDockerController()
+	if err != nil {
+		return App{}, err
+	}
 	repository := InjectDb(db)
-	motoService := service.NewMotoService(cfg, repository)
+	motoService := service.NewMotoService(cfg, dockerController, repository)
 	sqsService := service.NewSqsService(repository)
 	proxy := http.NewProxy(cfg)
 	mux := http.NewChiMux(motoService, sqsService, proxy)
-	app := NewApp(cfg, mux, motoService)
+	app := NewApp(cfg, dockerController, mux, motoService)
 	return app, nil
 }
 

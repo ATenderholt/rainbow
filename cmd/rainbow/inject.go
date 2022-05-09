@@ -5,6 +5,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/rainbow/internal/http"
 	"github.com/ATenderholt/rainbow/internal/service"
 	"github.com/ATenderholt/rainbow/settings"
@@ -26,6 +27,7 @@ func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 		http.NewProxy,
 		service.NewMotoService,
 		service.NewSqsService,
+		dockerlib.NewDockerController,
 		wire.Bind(new(MotoService), new(service.MotoService)),
 		wire.Bind(new(http.MotoService), new(service.MotoService)),
 		wire.Bind(new(http.SqsService), new(service.SqsService)),
