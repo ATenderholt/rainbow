@@ -29,6 +29,7 @@ func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 		service.NewSqsService,
 		dockerlib.NewDockerController,
 		wire.Bind(new(MotoService), new(service.MotoService)),
+		wire.Bind(new(SqsService), new(service.SqsService)),
 		wire.Bind(new(http.MotoService), new(service.MotoService)),
 		wire.Bind(new(http.SqsService), new(service.SqsService)),
 	)

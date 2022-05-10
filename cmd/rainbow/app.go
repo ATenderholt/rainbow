@@ -18,14 +18,19 @@ type MotoService interface {
 	Start(ctx context.Context) error
 }
 
+type SqsService interface {
+	Start(ctx context.Context) error
+}
+
 type App struct {
 	cfg    *settings.Config
 	docker *dockerlib.DockerController
 	srv    *http.Server
 	moto   MotoService
+	sqs    SqsService
 }
 
-func NewApp(cfg *settings.Config, docker *dockerlib.DockerController, mux *chi.Mux, moto MotoService) App {
+func NewApp(cfg *settings.Config, docker *dockerlib.DockerController, mux *chi.Mux, moto MotoService, sqs SqsService) App {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
@@ -36,6 +41,7 @@ func NewApp(cfg *settings.Config, docker *dockerlib.DockerController, mux *chi.M
 		docker: docker,
 		srv:    srv,
 		moto:   moto,
+		sqs:    sqs,
 	}
 }
 
@@ -58,6 +64,13 @@ func (app App) Start() error {
 		return e
 	}
 
+	err = app.StartSqs()
+	if err != nil {
+		e := fmt.Errorf("unable to start sqs: %v", err)
+		logger.Error(e)
+		return e
+	}
+	
 	return app.StartHttp()
 }
 
@@ -86,6 +99,17 @@ func (app App) StartMoto() error {
 	err = app.moto.ReplayAllRequests(ctx)
 	if err != nil {
 		logger.Errorf("unable to replay Moto requests: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (app App) StartSqs() error {
+	ctx := context.Background()
+	err := app.sqs.Start(ctx)
+	if err != nil {
+		logger.Errorf("unable to start sqs: %v", err)
 		return err
 	}
 

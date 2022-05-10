@@ -29,10 +29,10 @@ func InjectApp(cfg *settings.Config, db *sql.DB) (App, error) {
 	}
 	repository := InjectDb(db)
 	motoService := service.NewMotoService(cfg, dockerController, repository)
-	sqsService := service.NewSqsService(repository)
+	sqsService := service.NewSqsService(cfg, dockerController, repository)
 	proxy := http.NewProxy(cfg)
 	mux := http.NewChiMux(motoService, sqsService, proxy)
-	app := NewApp(cfg, dockerController, mux, motoService)
+	app := NewApp(cfg, dockerController, mux, motoService, sqsService)
 	return app, nil
 }
 

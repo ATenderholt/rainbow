@@ -15,6 +15,9 @@ const (
 	DefaultDbFilename = "db.sqlite3"
 	DefaultDataPath   = "data"
 
+	DefaultRegion        = "us-west-2"
+	DefaultAccountNumber = "271828182845"
+
 	DefaultDockerNetwork  = "rainbow"
 	DefaultFunctionsImage = "atenderholt/rainbow-functions:latest"
 	DefaultFunctionsName  = "rainbow-functions"
@@ -44,7 +47,11 @@ type Config struct {
 	dataPath   string
 	dbFileName string
 	IsLocal    bool
-	Network    string
+
+	Region        string
+	AccountNumber string
+
+	Network string
 
 	Functions Container
 	Moto      Container
@@ -63,6 +70,9 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.StringVar(&cfg.dataPath, "data-path", DefaultDataPath, "Path to persist data")
 	flags.StringVar(&cfg.dbFileName, "db", DefaultDbFilename, "Database file for persisting configuration")
 	flags.BoolVar(&cfg.IsLocal, "local", true, "Application is running locally (vs. in container)")
+
+	flags.StringVar(&cfg.Region, "region", DefaultRegion, "Region to use for SQS urls, API calls, etc.")
+	flags.StringVar(&cfg.AccountNumber, "account-number", DefaultAccountNumber, "Account number to use for SQS urls")
 
 	flags.StringVar(&cfg.Network, "network", DefaultDockerNetwork, "Network to run docker containers")
 
