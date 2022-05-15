@@ -6,6 +6,7 @@ import (
 	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/rainbow/logging"
 	"github.com/ATenderholt/rainbow/settings"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"os"
@@ -70,6 +71,11 @@ func (app App) Start() error {
 		logger.Error(e)
 		return e
 	}
+
+	err = app.StartStorage()
+	if err != nil {
+		return err
+	}
 	
 	return app.StartHttp()
 }
@@ -113,6 +119,42 @@ func (app App) StartSqs() error {
 		return err
 	}
 
+	return nil
+}
+
+func (app App) StartStorage() error {
+	container := dockerlib.Container{
+		Name:  "rainbow-storage",
+		Image: app.cfg.Storage.Image,
+		Mounts: []mount.Mount{
+			{
+				Source: app.cfg.DataPath(),
+				Target: "/data",
+				Type:   mount.TypeBind,
+			},
+			{
+				Source: "/var/run/docker.sock",
+				Target: "/var/run/docker.sock",
+				Type:   mount.TypeBind,
+			},
+		},
+		Ports: map[int]int{
+			9000: app.cfg.Storage.Port,
+		},
+		Network: []string{app.cfg.Network},
+	}
+
+	ctx := context.Background()
+	ready, err := app.docker.Start(ctx, &container, "Background storage container is ready")
+	if err != nil {
+		e := fmt.Errorf("unable to start rainbow-storage: %v", err)
+		logger.Error(e)
+		return e
+	}
+
+	<-ready
+
+	logger.Info("rainbow-storage is ready")
 	return nil
 }
 
